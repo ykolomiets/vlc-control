@@ -13,6 +13,9 @@
         #status {
             margin-top: 20px;
         }
+        #volume-control {
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
@@ -26,6 +29,17 @@
     <button onclick="sendAction('toggle-pause')">Toggle Pause</button>
     <button onclick="sendAction('sync')">Sync</button>
     <button onclick="sendAction('fullscreen')">Fullscreen</button>
+
+    <div id="volume-control">
+        <h2>Set Volume</h2>
+        <form id="volume-form">
+            <label for="playerId">Player ID:</label>
+            <input type="number" id="playerId" name="playerId" min="1" required>
+            <label for="volume">Volume (0-512):</label>
+            <input type="number" id="volume" name="volume" min="0" max="512" required>
+            <button type="submit">Set Volume</button>
+        </form>
+    </div>
 
     <script>
         // Function to send action requests
@@ -52,6 +66,24 @@
                 })
                 .catch(error => console.error('Error fetching status:', error));
         }
+
+        // Function to handle volume form submission
+        document.getElementById('volume-form').addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent the form from submitting in the traditional way
+
+            const playerId = document.getElementById('playerId').value;
+            const volume = document.getElementById('volume').value;
+
+            fetch(`/volume/${playerId}/${volume}`, {
+                method: 'POST'
+            }).then(response => {
+                if (response.ok) {
+                    console.log(`Volume set to ${volume} for player ${playerId}`);
+                } else {
+                    console.error(`Failed to set volume for player ${playerId}`);
+                }
+            }).catch(error => console.error('Error:', error));
+        });	
 
         // Fetch status every second
         setInterval(fetchStatus, 1000);
