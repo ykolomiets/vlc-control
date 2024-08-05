@@ -2,16 +2,16 @@
   "name": "vlc-control",
   "version": "1.0.0",
   "license": "ISC",
-  "main": "index.mjs",
+  "main": "src/index.js",
   "type": "module",
   "scripts": {
-    "start": "node index.mjs"
+    "start": "node src/index.js"
   },
   "dependencies": {
     "@ffprobe-installer/ffprobe": "^2.1.2",
     "@inquirer/prompts": "^5.3.6",
-    "chalk": "^5.3.0",
     "commander": "^12.1.0",
+    "express": "^5.0.0-beta.3",
     "lodash.without": "^4.4.0"
   }
 }
