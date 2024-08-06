@@ -1,6 +1,9 @@
+#!/usr/bin/env node
+
 import * as commander from "commander";
 import arrayWithout from "lodash.without";
 import express from "express";
+import { ips } from "./ips.js";
 import { getAudiotracks } from "./get-audiotracks.js";
 import { parsePortList } from "./cli/parse-options.js";
 import { selectMainAudiotrack, selectSecondaryAudiotracks } from "./cli/select-audiotrack.js";
@@ -23,11 +26,11 @@ commander.program
 		"password to VLC HTTP interface",
 		"insecure_password"
 	)
+	.addOption(new commander.Option("--interface <intf>").choices(["web"]).default("web"))
 	.action(main)
 	.parse();
 
 async function main(filename, options) {
-	console.log(options);
 	const audiotracks = getAudiotracks(filename);
 	const mainAudiotrack = await selectMainAudiotrack(audiotracks);
 	const secondaryAudiotracks = await selectSecondaryAudiotracks(arrayWithout(audiotracks, mainAudiotrack));
@@ -56,7 +59,7 @@ async function main(filename, options) {
 			playerName: `SECONDARY (${audiotrack.title})`,
 			filename,
 			audiotrack,
-			noVideo: true,
+			noVideo: false,
 			httpInterfacePort: options.vlcPorts[idx + 1],
 			httpInterfacePassword: options.vlcPassword,
 		})
@@ -66,7 +69,13 @@ async function main(filename, options) {
 
 	const app = express();
 
-	app.use(express.static('public'));
+	app.set('view engine', 'pug');
+	app.set('views', './src/web/views');
+//	app.use(express.static('public'));
+
+	app.get('/', (req, res) => {
+		res.render('index', { title: 'Hey', message: 'Hello there!' });
+	});
 
 	app.use((err, req, res, next) => {
 		console.error(err)
@@ -98,7 +107,12 @@ async function main(filename, options) {
 		return res.sendStatus(200);
 	});
 
-	const httpServer = app.listen(options.port);
+	const httpServer = app.listen(options.port, "0.0.0.0", () => {
+		console.log("Open one of the following URLs:");
+		for (const ip of ips) {
+			console.log(`\thttp://${ip}:${options.port}`);
+		}
+	});
 
 	process.on("exit", () => {
 		httpServer.close();
