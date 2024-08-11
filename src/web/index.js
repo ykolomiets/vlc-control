@@ -11,7 +11,10 @@ export function buildAndStartWebInterface({ port, control }) {
   app.set("view engine", "pug");
   app.set("views", path.join(import.meta.dirname, "./views"));
 
-  app.use("/static", express.static(path.join(import.meta.dirname, "./assets")));
+  app.use(
+    "/static",
+    express.static(path.join(import.meta.dirname, "./assets")),
+  );
   app.use(express.urlencoded({ extended: true }));
 
   app.get("/", async (req, res) => {

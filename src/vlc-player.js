@@ -14,10 +14,7 @@ export function buildStartVlcPlayer({
 }) {
   const availablePorts = [...httpInterfacePorts];
 
-  return async function startVlcPlayer({
-    noVideo,
-    closeOrErrorCallback,
-  }) {
+  return async function startVlcPlayer({ noVideo, closeOrErrorCallback }) {
     const playerId = generateId();
 
     const port = availablePorts.pop();
@@ -54,7 +51,7 @@ export function buildStartVlcPlayer({
       availablePorts.push(port);
       state = { isClosed: true };
       closeOrErrorCallback?.();
-    }
+    };
 
     vlcProcess.on("exit", (code) => {
       console.log(`VLC player #${playerId}" exited with code ${code}`);
@@ -89,14 +86,14 @@ export function buildStartVlcPlayer({
         audiotracks: data.audiotracks,
         subtitletracks: data.subtitletracks,
         audiodevices: data.aoutdevices,
-      }
+      };
     };
 
     const close = executeIfNotClosed(() => vlcProcess.kill("SIGTERM"));
     const refreshState = executeIfNotClosed(() => makeRequest());
     const togglePause = executeIfNotClosed(() => makeRequest("pl_pause"));
     const pause = executeIfNotClosed(async () => {
-      await refreshState()
+      await refreshState();
       if (state.state === "playing") {
         await togglePause();
       }
@@ -113,13 +110,13 @@ export function buildStartVlcPlayer({
       // so we have to manually update state here
       state.volume = value;
     });
-    const setAudiotrack = executeIfNotClosed((value) => 
+    const setAudiotrack = executeIfNotClosed((value) =>
       makeRequest(`audio_track&val=${value}`),
     );
-    const setAudiodevice = executeIfNotClosed((value) => 
+    const setAudiodevice = executeIfNotClosed((value) =>
       makeRequest(`set_aout_device&val=${value}`),
     );
-    const setSubtitleTrack = executeIfNotClosed((value) => 
+    const setSubtitleTrack = executeIfNotClosed((value) =>
       makeRequest(`subtitle_track&val=${value}`),
     );
 
@@ -137,7 +134,7 @@ export function buildStartVlcPlayer({
         setAudiodevice,
         setSubtitleTrack,
         close,
-      }
+      },
     };
 
     return new Promise(async (resolve, reject) => {
@@ -151,7 +148,9 @@ export function buildStartVlcPlayer({
           error = err;
         }
       }
-      console.error(`Failed to connect to VLC player #${playerId} http interface`);
+      console.error(
+        `Failed to connect to VLC player #${playerId} http interface`,
+      );
       console.error(error);
       close();
       reject();

@@ -4,8 +4,12 @@
   "license": "ISC",
   "main": "src/index.js",
   "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
-    "start": "node src/index.js"
+    "start": "node src/index.js",
+    "lint": "prettier -w src/**"
   },
   "bin": {
     "vlc-control": "./src/index.js"

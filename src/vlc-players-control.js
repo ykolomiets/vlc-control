@@ -1,7 +1,9 @@
 import pLimit from "p-limit";
 const limitConcurrency = (() => {
   const limit = pLimit(1);
-  return (fn) => (...args) => limit(fn, ...args)
+  return (fn) =>
+    (...args) =>
+      limit(fn, ...args);
 })();
 
 export function buildVlcPlayersControl({ startVlcPlayer, maxPlayers }) {
@@ -14,7 +16,7 @@ export function buildVlcPlayersControl({ startVlcPlayer, maxPlayers }) {
       throw new Error(`No active player with id ${playerId}`);
     }
     return player;
-  }
+  };
 
   const getAllPlayers = () => {
     const players = [...secondaryPlayers];
@@ -22,7 +24,7 @@ export function buildVlcPlayersControl({ startVlcPlayer, maxPlayers }) {
       players.push(mainPlayer);
     }
     return players;
-  }
+  };
 
   const startMainPlayer = limitConcurrency(async () => {
     if (mainPlayer) {
@@ -43,12 +45,12 @@ export function buildVlcPlayersControl({ startVlcPlayer, maxPlayers }) {
       noVideo: true,
       closeOrErrorCallback: () => {
         secondaryPlayers.delete(player);
-      }
+      },
     });
 
     secondaryPlayers.add(player);
 
-    await synchronizePlayers()
+    await synchronizePlayers();
   });
 
   const closePlayer = async (playerId) => {
@@ -63,22 +65,24 @@ export function buildVlcPlayersControl({ startVlcPlayer, maxPlayers }) {
   };
 
   const refreshState = async () => {
-    await Promise.all(getAllPlayers().map(p => p.refreshState()));
-  }
+    await Promise.all(getAllPlayers().map((p) => p.refreshState()));
+  };
 
   const getState = () => {
     return {
-      mainPlayer: mainPlayer && !mainPlayer.getState().isClosed
-        ? {
-          id: mainPlayer.id,
-          ...mainPlayer.getState()
-        } : null,
+      mainPlayer:
+        mainPlayer && !mainPlayer.getState().isClosed
+          ? {
+              id: mainPlayer.id,
+              ...mainPlayer.getState(),
+            }
+          : null,
       secondaryPlayers: [...secondaryPlayers]
-        .map(p => ({
+        .map((p) => ({
           id: p.id,
           ...p.getState(),
         }))
-        .filter(p => !p.isClosed),
+        .filter((p) => !p.isClosed),
       maxPlayers,
     };
   };
@@ -88,10 +92,10 @@ export function buildVlcPlayersControl({ startVlcPlayer, maxPlayers }) {
   };
 
   const synchronizePlayers = async () => {
-    await Promise.all(getAllPlayers().map(p => p.actions.pause()));
+    await Promise.all(getAllPlayers().map((p) => p.actions.pause()));
     if (mainPlayer) {
       const { time } = mainPlayer.getState();
-      await Promise.all(getAllPlayers().map(p => p.actions.seekTo(time)));
+      await Promise.all(getAllPlayers().map((p) => p.actions.seekTo(time)));
     }
   };
 
@@ -103,17 +107,17 @@ export function buildVlcPlayersControl({ startVlcPlayer, maxPlayers }) {
 
   const setAudiotrack = async (playerId, trackId) => {
     await getPlayer(playerId).actions.setAudiotrack(trackId);
-  }
+  };
 
   const setAudiodevice = async (playerId, deviceId) => {
     await getPlayer(playerId).actions.setAudiodevice(deviceId);
-  }
+  };
 
   const setSubtitleTrack = async (playerId, trackId) => {
     await getPlayer(playerId).actions.setSubtitleTrack(trackId);
-  }
+  };
 
-  const closeAll = () => Promise.all(getAllPlayers().map(p => p.close()));
+  const closeAll = () => Promise.all(getAllPlayers().map((p) => p.close()));
 
   process.on("exit", closeAll);
 

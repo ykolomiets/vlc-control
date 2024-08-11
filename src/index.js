@@ -36,7 +36,10 @@ async function main(filename, options) {
     httpInterfacePassword: options.vlcPassword,
   });
 
-  const control = buildVlcPlayersControl({ startVlcPlayer, maxPlayers: options.vlcPorts.length });
+  const control = buildVlcPlayersControl({
+    startVlcPlayer,
+    maxPlayers: options.vlcPorts.length,
+  });
   if (options.interface === "web") {
     buildAndStartWebInterface({ port: options.webPort, control });
   }
