@@ -49,6 +49,17 @@ section(
     button#start-main-player-btn(hx-post='/main-player') Start main player
   else
     div#main-player-control.player-control
+      span #{formatTime(mainPlayer.time)}/#{formatTime(mainPlayer.length)}
+      input#seekbar(
+        name='time',
+        type='range',
+        min=0,
+        max=mainPlayer.length,
+        step=1,
+        value=mainPlayer.time,
+        hx-post='/seek'
+      )
+
       button(hx-post='/toggle-pause', hx-swap='morph:{ignoreActive:false}')
         if mainPlayer.state === 'playing'
           img(src='/static/icons/pause.svg', alt='pause')
@@ -76,4 +87,3 @@ section(
     +common-player-control(player)
   if maxPlayers > secondaryPlayers.length + 1
     button#add-secondary-player-btn(hx-post='/secondary-player') Add secondary player
-

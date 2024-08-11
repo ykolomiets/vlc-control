@@ -40,3 +40,8 @@
 .tooltip:hover .tooltiptext {
   visibility: visible;
 }
+
+#seekbar {
+  width: 100%;
+}
+

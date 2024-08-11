@@ -10,6 +10,7 @@ export function buildAndStartWebInterface({ port, control }) {
 
   app.set("view engine", "pug");
   app.set("views", path.join(import.meta.dirname, "./views"));
+  app.locals.formatTime = (seconds) => new Date(seconds * 1000).toISOString().substring(11, 19);
 
   app.use(
     "/static",
@@ -75,6 +76,12 @@ export function buildAndStartWebInterface({ port, control }) {
       await control.setSubtitleTrack(playerId, req.body.subtitletrack);
     }
 
+    const state = control.getState();
+    res.render("includes/control-panel", state);
+  });
+
+  app.post("/seek", async (req, res) => {
+    await control.seekTo(parseInt(req.body.time));
     const state = control.getState();
     res.render("includes/control-panel", state);
   });

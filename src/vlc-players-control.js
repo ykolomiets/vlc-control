@@ -117,6 +117,10 @@ export function buildVlcPlayersControl({ startVlcPlayer, maxPlayers }) {
     await getPlayer(playerId).actions.setSubtitleTrack(trackId);
   };
 
+  const seekTo = async (time) => {
+    await Promise.all(getAllPlayers().map(p => p.actions.seekTo(time)));
+  };
+
   const closeAll = () => Promise.all(getAllPlayers().map((p) => p.close()));
 
   process.on("exit", closeAll);
@@ -134,5 +138,6 @@ export function buildVlcPlayersControl({ startVlcPlayer, maxPlayers }) {
     setAudiodevice,
     setVolume,
     setSubtitleTrack,
+    seekTo,
   };
 }
