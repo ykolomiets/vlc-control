@@ -1,3 +1,8 @@
+mixin attention-icon-with-tooltip(text)
+  .tooltip
+    img(src='/static/icons/circle-attention.svg', alt='N/A')
+    span.tooltiptext #{text}
+
 mixin common-player-control(player)
   - const controlId = `player-control-${player.id}`
   div
@@ -10,35 +15,18 @@ mixin common-player-control(player)
     )
       label(for=`audiotrack-selector-${player.id}`) Audiotrack:
       if player.audiotracks
-        select(
-          id=`audiotrack-selector-${player.id}`
-          name='audiotrack'
-        )
+        select(id=`audiotrack-selector-${player.id}` name='audiotrack')
           each track in player.audiotracks
             option(value=track.id, selected=track.selected) #{track.title}
       else
-        .tooltip
-          img(
-            src='/static/icons/circle-attention.svg',
-            alt='N/A'
-          )
-          span.tooltiptext Your version of VLC player requires you to select audiotracks manually via player's UI
-
+        +attention-icon-with-tooltip('Your version of VLC player requires you to select audiotracks manually via player\'s UI')
       label(for=`audiodevice-selector-${player.id}`) Audio Device:
       if player.audiodevices
-        select(
-          id=`audiodevice-selector-${player.id}`
-          name='audiodevice'
-        )
+        select(id=`audiodevice-selector-${player.id}` name='audiodevice')
           each device in player.audiodevices
             option(value=device.id, selected=device.selected) #{device.name}
       else
-        .tooltip
-          img(
-            src='/static/icons/circle-attention.svg',
-            alt='N/A'
-          )
-          span.tooltiptext Your version of VLC player requires you to select audiodevice manually via player's UI
+        +attention-icon-with-tooltip('Your version of VLC player requires you to select audiodevice manually via player\'s UI')
 
       label(for=`volume-input-${player.id}`) Volume:
       input(
@@ -49,10 +37,7 @@ mixin common-player-control(player)
         max=512,
         value=player.volume,
       )
-    button(
-      id=`close-player-${player.id}`
-      hx-delete=`/players/${player.id}`
-    ) Close
+    button(id=`close-player-${player.id}` hx-delete=`/players/${player.id}`) Close
 
 section(
   hx-get='/control-panel',
@@ -64,25 +49,19 @@ section(
     button#start-main-player-btn(hx-post='/main-player') Start main player
   else
     div#main-player-control.player-control
-      button(
-        hx-post='/toggle-pause',
-        hx-swap='morph:{ignoreActive:false}'
-      )
-        img(
-          src='/static/icons/' + (mainPlayer.state === 'playing' ? 'pause.svg' : 'play.svg'),
-          alt=(mainPlayer.state === 'playing' ? 'pause' : 'play')
-        )
-      button(
-        hx-post='/toggle-fullscreen',
-        hx-swap='morph:{ignoreActive:false}'
-      )
-        img(
-          src='/static/icons/' + (mainPlayer.fullscreen ? 'fullscreen-exit.svg' : 'fullscreen.svg'),
-          alt='toggle fullscreen'
-        )
-      button(
-        hx-post='/synchronize-players'
-      ) Sync players
+      button(hx-post='/toggle-pause', hx-swap='morph:{ignoreActive:false}')
+        if mainPlayer.state === 'playing'
+          img(src='/static/icons/pause.svg', alt='pause')
+        else
+          img(src='/static/icons/play.svg', alt='play')
+
+      button(hx-post='/toggle-fullscreen', hx-swap='morph:{ignoreActive:false}')
+        if mainPlayer.fullscreen
+          img(src='/static/icons/fullscreen-exit.svg', alt='exit fullscreen')
+        else
+          img(src='/static/icons/fullscreen.svg', alt='fullscreen')
+
+      button(hx-post='/synchronize-players') Sync players
       if mainPlayer.subtitletracks
         label(for='subtitles-selector') Subtitles:
         select(
