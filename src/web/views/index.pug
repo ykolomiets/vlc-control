@@ -1,0 +1,11 @@
+doctype html
+html(lang='en')
+  head
+    meta(charset='utf-8')
+    meta(name='viewport' content='width=device-width, initial-scale=1')
+    title VLC Control
+    link(rel='stylesheet' href='/static/css/index.css')
+  body(hx-ext='morph')
+    include includes/control-panel.pug
+  script(src='https://unpkg.com/htmx.org@2.0.1')
+  script(src='https://unpkg.com/idiomorph/dist/idiomorph-ext.min.js')

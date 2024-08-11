@@ -1,59 +1,134 @@
-export function buildVlcPlayersControl(mainVlcPlayer, secondaryVlcPlayers) {
-	const allPlayers = [mainVlcPlayer, ...secondaryVlcPlayers];
+import pLimit from "p-limit";
+const limitConcurrency = (() => {
+  const limit = pLimit(1);
+  return (fn) => (...args) => limit(fn, ...args)
+})();
 
-	const getStatus = async () => {
-		const [mainStatus, ...secondaryStatuses] = await Promise.all(
-			allPlayers.map(async p => ({
-				id: p.id,
-				name: p.name,
-				...(await p.getStatus()),
-			}))
-		);
+export function buildVlcPlayersControl({ startVlcPlayer, maxPlayers }) {
+  let mainPlayer = null;
+  const secondaryPlayers = new Set();
 
-		return {
-			filename: mainStatus.information.category.meta.filename,
-			state: mainStatus.state,
-			time: mainStatus.time,
-			length: mainStatus.length,
-			fullscreen: !!mainStatus.fullscreen,
-			players: [mainStatus, ...secondaryStatuses].map(s => ({
-				id: s.id,
-				name: s.name,
-				closed: s.closed ?? false,
-				volume: s.volume,
-				time: s.time,
-			}))
-		};
-	};
+  const getPlayer = (playerId) => {
+    const player = getAllPlayers().find((p) => p.id === playerId);
+    if (!player) {
+      throw new Error(`No active player with id ${playerId}`);
+    }
+    return player;
+  }
 
-	const togglePause = async () => {
-		await Promise.all(allPlayers.map(p => p.togglePause()));
-	};
+  const getAllPlayers = () => {
+    const players = [...secondaryPlayers];
+    if (mainPlayer) {
+      players.push(mainPlayer);
+    }
+    return players;
+  }
 
-	const synchronize = async () => {
-		await Promise.all(allPlayers.map(p => p.pause()));
-		const mainStatus = await mainVlcPlayer.getStatus();
-		await Promise.all(allPlayers.map(p => p.seekTo(mainStatus.time)));
-	};
+  const startMainPlayer = limitConcurrency(async () => {
+    if (mainPlayer) {
+      console.warn("Main player is running already...");
+      return;
+    }
 
-	const toggleFullscreen = () => mainVlcPlayer.toggleFullscreen();
+    mainPlayer = await startVlcPlayer({
+      noVideo: false,
+      closeOrErrorCallback: () => {
+        mainPlayer = null;
+      },
+    });
+  });
 
-	const setVolume = async (playerId, value) => {
-		const player = allPlayers.find(p => p.id == playerId);
-		if (!player) {
-			throw new Error("No active player with such id");
-		}
-		await player.setVolume(value);
-	}
+  const addSecondaryPlayer = limitConcurrency(async () => {
+    const player = await startVlcPlayer({
+      noVideo: true,
+      closeOrErrorCallback: () => {
+        secondaryPlayers.delete(player);
+      }
+    });
 
-	const closeAll = () => Promise.all(allPlayers.map(p => p.close()));
+    secondaryPlayers.add(player);
 
-	return {
-		getStatus,
-		togglePause,
-		synchronize,
-		toggleFullscreen,
-		setVolume,
-		closeAll,
-	};
+    await synchronizePlayers()
+  });
+
+  const closePlayer = async (playerId) => {
+    const player = getPlayer(playerId);
+    player.actions.close();
+    if (player === mainPlayer) {
+      mainPlayer = null;
+      await Promise.all([...secondaryPlayers].map((p) => p.actions.pause()));
+    } else {
+      secondaryPlayers.delete(player);
+    }
+  };
+
+  const refreshState = async () => {
+    await Promise.all(getAllPlayers().map(p => p.refreshState()));
+  }
+
+  const getState = () => {
+    return {
+      mainPlayer: mainPlayer && !mainPlayer.getState().isClosed
+        ? {
+          id: mainPlayer.id,
+          ...mainPlayer.getState()
+        } : null,
+      secondaryPlayers: [...secondaryPlayers]
+        .map(p => ({
+          id: p.id,
+          ...p.getState(),
+        }))
+        .filter(p => !p.isClosed),
+      maxPlayers,
+    };
+  };
+
+  const togglePause = async () => {
+    await Promise.all(getAllPlayers().map((p) => p.actions.togglePause()));
+  };
+
+  const synchronizePlayers = async () => {
+    await Promise.all(getAllPlayers().map(p => p.actions.pause()));
+    if (mainPlayer) {
+      const { time } = mainPlayer.getState();
+      await Promise.all(getAllPlayers().map(p => p.actions.seekTo(time)));
+    }
+  };
+
+  const toggleFullscreen = () => mainPlayer.actions.toggleFullscreen();
+
+  const setVolume = async (playerId, value) => {
+    await getPlayer(playerId).actions.setVolume(value);
+  };
+
+  const setAudiotrack = async (playerId, trackId) => {
+    await getPlayer(playerId).actions.setAudiotrack(trackId);
+  }
+
+  const setAudiodevice = async (playerId, deviceId) => {
+    await getPlayer(playerId).actions.setAudiodevice(deviceId);
+  }
+
+  const setSubtitleTrack = async (playerId, trackId) => {
+    await getPlayer(playerId).actions.setSubtitleTrack(trackId);
+  }
+
+  const closeAll = () => Promise.all(getAllPlayers().map(p => p.close()));
+
+  process.on("exit", closeAll);
+
+  return {
+    refreshState,
+    getState,
+    startMainPlayer,
+    addSecondaryPlayer,
+    synchronizePlayers,
+    closePlayer,
+    toggleFullscreen,
+    togglePause,
+    setAudiotrack,
+    setAudiodevice,
+    setVolume,
+    setSubtitleTrack,
+  };
 }

@@ -7,11 +7,18 @@
   "scripts": {
     "start": "node src/index.js"
   },
+  "bin": {
+    "vlc-control": "./src/index.js"
+  },
   "dependencies": {
-    "@ffprobe-installer/ffprobe": "^2.1.2",
     "@inquirer/prompts": "^5.3.6",
     "commander": "^12.1.0",
     "express": "^5.0.0-beta.3",
-    "lodash.without": "^4.4.0"
+    "lodash.without": "^4.4.0",
+    "p-limit": "^6.1.0",
+    "pug": "^3.0.3"
+  },
+  "devDependencies": {
+    "prettier": "^3.3.3"
   }
 }
